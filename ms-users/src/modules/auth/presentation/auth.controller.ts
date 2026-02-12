@@ -1,25 +1,26 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthDto } from '../application/dtos/auth.dto';
+import { AuthenticateUserUseCase } from '../application/use-cases/authenticate-user.use-case';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly authenticateUserUseCase: AuthenticateUserUseCase,
+  ) {}
 
   @Post()
-  authenticate(@Body() body: AuthDto) {
+  async authenticate(@Body() body: AuthDto) {
+    const user = await this.authenticateUserUseCase.execute(body);
+
     const accessToken = this.jwtService.sign({
-      sub: 'scaffold-user-id',
-      email: body.email,
+      sub: user.id,
+      email: user.email,
     });
 
     return {
-      user: {
-        id: 'scaffold-user-id',
-        first_name: 'Scaffold',
-        last_name: 'User',
-        email: body.email,
-      },
+      user,
       access_token: accessToken,
     };
   }
