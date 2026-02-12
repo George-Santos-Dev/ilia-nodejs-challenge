@@ -1,16 +1,11 @@
-import { IsEnum, IsInt, IsString, Min } from 'class-validator';
-
-export enum TransactionType {
-  CREDIT = 'CREDIT',
-  DEBIT = 'DEBIT',
-}
+import { Type } from 'class-transformer';
+import { IsEnum, IsNumber, Min } from 'class-validator';
+import { TransactionType } from '../../domain/enums/transaction-type.enum';
 
 export class CreateTransactionDto {
-  @IsString()
-  user_id!: string;
-
-  @IsInt()
-  @Min(1)
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
   amount!: number;
 
   @IsEnum(TransactionType)
