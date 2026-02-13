@@ -11,6 +11,7 @@ import { USERS_REPOSITORY } from '../application/ports/users-repository.port';
 import { BcryptPasswordHasherService } from '../infrastructure/cryptography/bcrypt-password-hasher.service';
 import { UserOrmEntity } from '../infrastructure/persistence/entities/user.orm-entity';
 import { TypeOrmUsersRepository } from '../infrastructure/persistence/repositories/typeorm-users.repository';
+import { DefaultUserSeedService } from '../infrastructure/seed/default-user.seed.service';
 import { InternalJwtStrategy } from '../../../shared/auth/internal-jwt.strategy';
 import { InternalUsersController } from './internal-users.controller';
 import { UsersController } from './users.controller';
@@ -25,6 +26,7 @@ import { UsersController } from './users.controller';
     GetUserByIdUseCase,
     UpdateUserUseCase,
     DeleteUserUseCase,
+    DefaultUserSeedService,
     InternalJwtStrategy,
     {
       provide: USERS_REPOSITORY,

@@ -11,6 +11,11 @@ export default [
       parserOptions: {
         project: './tsconfig.app.json',
       },
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+      },
     },
     plugins: {
       '@typescript-eslint': tseslint,

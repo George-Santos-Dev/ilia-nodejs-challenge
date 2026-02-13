@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { authenticate } from '../model/auth.service';
-import { configureHttpAuth } from '@/shared/services/api/httpClient';
+import { setAccessToken } from '@/shared/services/auth/token-storage';
 
 type AuthState = {
   email: string;
@@ -22,16 +22,21 @@ export function useAuthViewModel() {
   const setEmail = (email: string) => setState((prev) => ({ ...prev, email }));
   const setPassword = (password: string) => setState((prev) => ({ ...prev, password }));
 
-  const submit = async () => {
+  const submit = async (): Promise<boolean> => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await authenticate({ email: state.email, password: state.password });
-      localStorage.setItem('access_token', response.access_token);
-      configureHttpAuth(response.access_token);
+      const response = await authenticate({
+        email: state.email.trim().toLowerCase(),
+        password: state.password,
+      });
+
+      setAccessToken(response.access_token);
       setState((prev) => ({ ...prev, loading: false }));
+      return true;
     } catch {
-      setState((prev) => ({ ...prev, loading: false, error: 'Falha ao autenticar.' }));
+      setState((prev) => ({ ...prev, loading: false, error: 'auth.invalidCredentials' }));
+      return false;
     }
   };
 

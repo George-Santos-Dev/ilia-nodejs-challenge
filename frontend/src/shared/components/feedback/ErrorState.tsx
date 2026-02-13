@@ -1,5 +1,8 @@
 import { Alert } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
-export function ErrorState({ label = 'Algo deu errado.' }: { label?: string }) {
-  return <Alert severity="error">{label}</Alert>;
+export function ErrorState({ label }: { label?: string }) {
+  const { t } = useTranslation();
+
+  return <Alert severity="error">{label ?? t('common.genericError')}</Alert>;
 }

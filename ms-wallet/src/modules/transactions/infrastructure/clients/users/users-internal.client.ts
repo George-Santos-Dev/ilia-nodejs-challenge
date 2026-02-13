@@ -1,9 +1,7 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import {
-  UsersVerificationGateway,
-} from '../../../application/ports/users-verification-gateway.port';
+import { UsersVerificationGateway } from '../../../application/ports/users-verification-gateway.port';
 
 @Injectable()
 export class UsersInternalClient implements UsersVerificationGateway {
@@ -13,7 +11,10 @@ export class UsersInternalClient implements UsersVerificationGateway {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {
-    this.usersServiceUrl = this.configService.get<string>('USERS_SERVICE_URL', 'http://ms-users:3002');
+    this.usersServiceUrl = this.configService.get<string>(
+      'USERS_SERVICE_URL',
+      'http://ms-users:3002',
+    );
   }
 
   async userExists(userId: string): Promise<boolean> {
