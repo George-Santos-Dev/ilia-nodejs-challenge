@@ -7,7 +7,7 @@ type BalanceState = {
   error: string | null;
 };
 
-export function useWalletBalanceViewModel() {
+export function useWalletBalanceViewModel(refreshKey: number) {
   const [state, setState] = useState<BalanceState>({
     amount: 0,
     loading: true,
@@ -15,14 +15,24 @@ export function useWalletBalanceViewModel() {
   });
 
   useEffect(() => {
+    let mounted = true;
+
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+
     getWalletBalance()
       .then((response) => {
+        if (!mounted) return;
         setState({ amount: response.amount, loading: false, error: null });
       })
       .catch(() => {
-        setState({ amount: 0, loading: false, error: 'Não foi possível carregar saldo.' });
+        if (!mounted) return;
+        setState({ amount: 0, loading: false, error: 'balance.loadError' });
       });
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [refreshKey]);
 
   return { state };
 }

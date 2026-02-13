@@ -5,7 +5,17 @@ export type AuthInput = {
   password: string;
 };
 
+export type AuthResponse = {
+  user: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+  access_token: string;
+};
+
 export async function authenticate(input: AuthInput) {
   const { data } = await usersApi.post('/auth', input);
-  return data as { access_token: string };
+  return data as AuthResponse;
 }

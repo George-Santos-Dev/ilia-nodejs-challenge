@@ -7,7 +7,7 @@ type TransactionsState = {
   error: string | null;
 };
 
-export function useTransactionsViewModel() {
+export function useTransactionsViewModel(refreshKey: number) {
   const [state, setState] = useState<TransactionsState>({
     items: [],
     loading: true,
@@ -15,16 +15,24 @@ export function useTransactionsViewModel() {
   });
 
   useEffect(() => {
+    let mounted = true;
+
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+
     getTransactions()
-      .then((items) => setState({ items, loading: false, error: null }))
-      .catch(() =>
-        setState({
-          items: [],
-          loading: false,
-          error: 'Não foi possível carregar transações.',
-        }),
-      );
-  }, []);
+      .then((items) => {
+        if (!mounted) return;
+        setState({ items, loading: false, error: null });
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setState({ items: [], loading: false, error: 'transactions.loadError' });
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [refreshKey]);
 
   return { state };
 }
