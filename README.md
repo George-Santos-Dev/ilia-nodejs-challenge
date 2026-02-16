@@ -1,89 +1,198 @@
-# ília - Code Challenge NodeJS
-**English**
-##### Before we start ⚠️
-**Please create a fork from this repository**
+# FinTech Wallet Challenge (Monorepo)
 
-## The Challenge:
-One of the ília Digital verticals is Financial and to level your knowledge we will do a Basic Financial Application and for that we divided this Challenge in 2 Parts.
+Implementação do desafio técnico da ília com arquitetura de microserviços + frontend.
 
-The first part is mandatory, which is to create a Wallet microservice to store the users' transactions, the second part is optional (*for Seniors, it's mandatory*) which is to create a Users Microservice with integration between the two microservices (Wallet and Users), using internal communications between them, that can be done in any of the following strategies: gRPC, REST, Kafka or via Messaging Queues and this communication must have a different security of the external application (JWT, SSL, ...), **Development in javascript (Node) is required.**
+## Visão Geral
 
-![diagram](diagram.png)
+Este repositório contém 3 aplicações:
 
-### General Instructions:
-## Part 1 - Wallet Microservice
+- `ms-users` (porta `3002`): cadastro, autenticação e gestão de usuários.
+- `ms-wallet` (porta `3001`): operações de carteira (crédito/débito), extrato e saldo.
+- `frontend` (porta `5173`): interface web para login e uso da carteira.
 
-This microservice must be a digital Wallet where the user transactions will be stored 
+A solução foi construída com:
 
-### The Application must have
+- Node.js + TypeScript
+- NestJS (microserviços backend)
+- React + Vite + MUI (frontend)
+- PostgreSQL (1 banco por microserviço)
+- JWT para autenticação externa e interna entre serviços
 
-    - Project setup documentation (readme.md).
-    - Application and Database running on a container (Docker, ...).
-    - This Microservice must receive HTTP Request.
-    - Have a dedicated database (Postgres, MySQL, Mongo, DynamoDB, ...).
-    - JWT authentication on all routes (endpoints) the PrivateKey must be ILIACHALLENGE (passed by env var).
-    - Configure the Microservice port to 3001. 
-    - Gitflow applied with Code Review in each step, open a feature/branch, create at least one pull request and merge it with Main(master deprecated), this step is important to simulate a team work and not just a commit.
+## Arquitetura e Fluxos
 
-## Part 2 - Microservice Users and Wallet Integration
+### 1) Autenticação externa
 
-### The Application must have:
+1. Cliente chama `POST /auth` no `ms-users`.
+2. `ms-users` valida credenciais e retorna `access_token` (JWT externo).
+3. Frontend envia esse token no header `Authorization: Bearer <token>`.
 
-    - Project setup documentation (readme.md).
-    - Application and Database running on a container (Docker, ...).
-    - This Microservice must receive HTTP Request.   
-    - Have a dedicated database(Postgres, MySQL, Mongo, DynamoDB...), you may use an Auth service like AWS Cognito.
-    - JWT authentication on all routes (endpoints) the PrivateKey must be ILIACHALLENGE (passed by env var).
-    - Set the Microservice port to 3002. 
-    - Gitflow applied with Code Review in each step, open a feature/branch, create at least one pull request and merge it with Main(master deprecated), this step is important to simulate a teamwork and not just a commit.
-    - Internal Communication Security (JWT, SSL, ...), if it is JWT the PrivateKey must be ILIACHALLENGE_INTERNAL (passed by env var).
-    - Communication between Microservices using any of the following: gRPC, REST, Kafka or via Messaging Queues (update your readme with the instructions to run if using a Docker/Container environment).
+### 2) Fluxo de transações
 
-## Part 3 - Frontend Implementation - Fullstack candidates only
+1. Cliente chama `POST /transactions` no `ms-wallet`.
+2. `ms-wallet` valida JWT externo.
+3. Antes de gravar transação, `ms-wallet` chama `ms-users` em rota interna para validar existência do usuário.
+4. Comunicação interna usa JWT próprio (`JWT_INTERNAL_SECRET`).
 
-In this challenge, you will build the frontend application for a FinTech Wallet platform, integrating with the backend microservices provided in the Node.js challenge.
+### 3) Segurança
 
-The application must allow users to authenticate, view their wallet balance, list transactions, and create credit or debit operations. The goal is to evaluate your ability to design a modern, secure, and well-structured UI that consumes microservice APIs, handles authentication via JWT, and provides a solid user experience with proper loading, error, and empty states.
+- Rotas públicas:
+  - `POST /users` (criação de usuário)
+  - `POST /auth` (login)
+- Rotas privadas (JWT externo):
+  - `ms-users`: listagem/detalhe/edição/remoção
+  - `ms-wallet`: criar/listar transações e consultar saldo
+- Rota interna protegida por JWT interno:
+  - `GET /internal/users/:id/exists`
 
-You may implement the solution using React, Vue, or Angular, following the required stack for the position you're running for and best practices outlined in the challenge.
+## Estrutura do Repositório
 
-### Before you start ⚠️
+```text
+.
+├── ms-users/
+├── ms-wallet/
+├── frontend/
+├── docker-compose.yml
+└── package.json (workspaces)
+```
 
-- **Create a separate folder for the Frontend project**
-- Frontend must be built in **Typescript**.  
-- The goal is to deliver a production-like UI that consumes the backend services:
-  - Wallet Service (port **3001**)
-  - Users Service (port **3002**, optional but mandatory for Senior)
+## Pré-requisitos
 
-### Challenge Overview
+- Node.js 18+
+- npm 9+
+- Docker + Docker Compose (para execução containerizada)
 
-You will build a **web application** that allows a user to:
+## Variáveis de Ambiente
 
-- Authenticate (if Users service exists)
-- View wallet balance
-- List transactions
-- Create transactions (credit/debit)
-- Handle loading, empty, and error states properly
+Cada aplicação possui `.env.example`.
 
-### Design Guidelines
+### `ms-users/.env`
 
-No visual prototype or UI mockups will be provided for this challenge on purpose. This is intentional so we can evaluate your product sense, design judgment, and ability to translate business requirements into a coherent user experience. You should focus on creating a clean, modern, and intuitive interface that prioritizes usability and clarity of financial information. Pay special attention to information hierarchy (for example, making balance visibility prominent), form usability and validation, transaction readability, and clear feedback for system states such as loading, success, and errors. Consistency in layout, spacing, typography, and component reuse is important, as well as responsiveness and accessibility basics. *We are not evaluating graphic design skills*, but rather your ability to craft a professional, production-ready UI that engineers and users would find reliable and easy to use.
+- `PORT=3002`
+- `JWT_EXTERNAL_SECRET=ILIACHALLENGE`
+- `JWT_INTERNAL_SECRET=ILIACHALLENGE_INTERNAL`
+- `DATABASE_URL=postgresql://users_user:users_pass@users-db:5432/users`
+- `SEED_DEFAULT_USER=true`
+- `SEED_DEFAULT_USER_EMAIL=admin@local.test`
+- `SEED_DEFAULT_USER_PASSWORD=123456`
+- `FRONTEND_URL=http://localhost:5173`
 
-Feel free to leverage on any opensource components library.
+### `ms-wallet/.env`
 
-### Requirements 
-This frontend should reflect real-world practices:
-- secure JWT handling
-- clean UX flows
-- robust API integration
-- scalable component structure
-- test coverage where it matters
-- supports i18n
-- responsive design (supporting mobile browser)
+- `PORT=3001`
+- `JWT_EXTERNAL_SECRET=ILIACHALLENGE`
+- `JWT_INTERNAL_SECRET=ILIACHALLENGE_INTERNAL`
+- `DATABASE_URL=postgresql://wallet_user:wallet_pass@wallet-db:5432/wallet`
+- `USERS_SERVICE_URL=http://ms-users:3002`
+- `FRONTEND_URL=http://localhost:5173`
 
-#### In the end, send us your fork repo updated. As soon as you finish, please let us know.
+### `frontend/.env`
 
-#### We are available to answer any questions.
+- `VITE_USERS_API_URL=http://localhost:3002`
+- `VITE_WALLET_API_URL=http://localhost:3001`
 
+## Como Executar
 
-Happy coding! 🤓
+### Opção A: Docker Compose (recomendado)
+
+Na raiz:
+
+```bash
+docker compose up --build
+```
+
+Serviços:
+
+- Frontend: `http://localhost:5173`
+- Users API: `http://localhost:3002`
+- Wallet API: `http://localhost:3001`
+- PostgreSQL users: `localhost:5434`
+- PostgreSQL wallet: `localhost:5433`
+
+### Opção B: Local (sem Docker)
+
+1. Instale dependências do monorepo:
+
+```bash
+npm install
+```
+
+2. Suba os bancos (ou configure `DATABASE_URL` para bancos já existentes).
+
+3. Rode cada app em terminal separado:
+
+```bash
+npm run dev:users
+npm run dev:wallet
+npm run dev:frontend
+```
+
+## Scripts Úteis (raiz)
+
+```bash
+npm run build
+npm run test
+npm run lint
+```
+
+Também é possível executar por workspace:
+
+```bash
+npm --workspace ms-users test
+npm --workspace ms-wallet test
+npm --workspace frontend test
+```
+
+## Endpoints Principais
+
+### `ms-users`
+
+- `POST /users` cria usuário
+- `POST /auth` autentica usuário
+- `GET /users` lista usuários (JWT)
+- `GET /users/:id` detalha usuário (JWT)
+- `PATCH /users/:id` atualiza usuário (JWT)
+- `DELETE /users/:id` remove usuário (JWT)
+- `GET /internal/users/:id/exists` valida existência (JWT interno)
+
+### `ms-wallet`
+
+- `POST /transactions` cria transação (`CREDIT` ou `DEBIT`) (JWT)
+- `GET /transactions` lista transações, com filtro opcional `type` (JWT)
+- `GET /balance` retorna saldo consolidado (JWT)
+
+## Validações de Negócio Implementadas
+
+- Email normalizado (trim + lowercase) em cadastro/login/atualização.
+- Não permite cadastro/atualização com email já existente.
+- Em débito, bloqueia valor acima do saldo (`insufficient balance`).
+- Sempre sanitiza retorno de usuário (não expõe senha).
+- Validação global de DTOs com `ValidationPipe` no NestJS.
+
+## Testes
+
+### Backend
+
+Foram priorizados os testes unitários dos dois microserviços.
+
+Execução validada:
+
+- `ms-users`: **10 suítes**, **22 testes** passando
+- `ms-wallet`: **4 suítes**, **11 testes** passando
+
+### Frontend
+
+Os testes do frontend **não foram implementados nesta entrega** por questão de tempo.
+
+A prioridade foi:
+
+1. concluir a criação e integração dos **dois microserviços** (`ms-users` e `ms-wallet`), e
+2. garantir cobertura unitária das regras de negócio no backend.
+
+## Observações de Projeto
+
+- O backend está organizado em camadas (application/domain/infrastructure/presentation).
+- Cada microserviço possui banco dedicado.
+- A comunicação interna entre serviços já está protegida com JWT específico.
+- O frontend está preparado para i18n (`pt-BR` e `en`) e estados de loading/erro/vazio.
+- Durante o desenvolvimento foi utilizada a sincronização automática do schema do TypeORM (`synchronize: true`) para acelerar a evolução.
+- Em ambiente de produção, o caminho recomendado é desabilitar essa flag e controlar alterações de banco com migrations versionadas.
